@@ -22,7 +22,10 @@ use temp_dir::TempDir;
 use super::*;
 use crate::{
 	encryption::KeyedXor,
-	proto::HeaderKind,
+	proto::{
+		Header,
+		HeaderKind,
+	},
 	Error,
 };
 
