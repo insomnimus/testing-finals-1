@@ -4,13 +4,13 @@ use serde::{
 };
 
 #[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Debug)]
-pub enum PacketHeader {
-	Chat {
-		len: u32,
+pub enum Header {
+	Msg {
+		len: usize,
 	},
 	File {
 		name: String,
-		len: u64,
+		len: usize,
 		compressed: bool,
 	},
 }
