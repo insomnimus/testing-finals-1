@@ -22,6 +22,7 @@ use temp_dir::TempDir;
 use super::*;
 use crate::{
 	encryption::KeyedXor,
+	proto::HeaderKind,
 	Error,
 };
 
@@ -41,7 +42,8 @@ fn test_send_msg() {
 		let mut dummy_connection = Vec::new();
 		let xor = KeyedXor::new(key);
 		let expected_cipher_text = xor.encrypt(msg.as_bytes());
-		let expected_header = Header::Msg {
+		let expected_header = Header {
+			kind: HeaderKind::Msg,
 			len: expected_cipher_text.len(),
 		};
 
@@ -103,19 +105,24 @@ fn test_send_file() {
 		assert_eq!(Ok(()), send_file(&mut dummy_con, &path, &xor));
 
 		// Read past the header, assert that it's a file.
-		// We don't check for len here since testing the file validity is equivalent.
 		let mut dummy_receiver = Cursor::new(dummy_con);
 		let header: Header = bincode::deserialize_from(&mut dummy_receiver)
 			.expect("received data does not start with a valid header");
-		match header {
-			Header::File {
-				name, compressed, ..
-			} if name.eq(file_name) && compressed => (),
+		let len = header.len;
+		match header.kind {
+			HeaderKind::File { name, compressed } if name.eq(file_name) && compressed => (),
 			x => panic!("header unexpected header: {:?}", x),
 		};
 		// Now read the compressed and encrypted  file.
 		let mut received_data = Vec::new();
 		dummy_receiver.read_to_end(&mut received_data).unwrap();
+
+		assert_eq!(
+			len,
+			received_data.len(),
+			"thea header's len property is incorrect"
+		);
+
 		xor.decrypt_in_place(&mut received_data);
 		let mut uncompressed = Vec::new();
 		let mut unarchiver = FrameDecoder::new(Cursor::new(received_data));
