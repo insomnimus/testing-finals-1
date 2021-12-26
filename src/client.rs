@@ -5,6 +5,7 @@ use std::{
 	fs::File,
 	io::{
 		self,
+		Read,
 		Write,
 	},
 	path::Path,
@@ -56,4 +57,8 @@ pub fn send_file<W: Write, C: Cipher>(mut con: W, path: &Path, cipher: &C) -> Re
 	con.write_all(&compressed)?;
 
 	Ok(())
+}
+
+pub fn read_header<R: Read>(mut con: R) -> Result<Header> {
+	bincode::deserialize_from(&mut con).map_err(|e| e.into())
 }
