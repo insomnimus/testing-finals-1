@@ -3,7 +3,6 @@ use std::{
 		self,
 		BufRead,
 		Read,
-		Write,
 	},
 	net::TcpStream,
 	sync::mpsc::{
@@ -110,20 +109,16 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 fn start_stdin(tx: Sender<Event>) {
 	thread::spawn(move || {
 		let stdin = io::stdin();
-		print!("command> ");
-		io::stdout().flush().unwrap();
-		for res in stdin.lock().lines() {
-			if let Ok(s) = res {
-				match s.trim().parse::<Command>() {
-					Ok(cmd) => tx
-						.send(Event::Command(cmd))
-						.unwrap_or_else(|_| std::process::exit(0)),
-					Err(e) => eprintln!("error: {}", e),
-				};
-			}
-			print!("command> ");
-			io::stdout().flush().unwrap();
-		}
+		println!("commands:\nmsg: send a chat message\nfile: send a file");
+		stdin
+			.lock()
+			.lines()
+			.flatten()
+			.map(|s| s.parse::<Command>())
+			.for_each(move |res| match res {
+				Ok(cmd) => tx.send(Event::Command(cmd)).unwrap(),
+				Err(e) => println!("error: {}", e),
+			});
 	});
 }
 
