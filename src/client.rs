@@ -5,13 +5,19 @@ use std::{
 	fs::File,
 	io::{
 		self,
-		Read,
+		Cursor,
 		Write,
 	},
-	path::Path,
+	path::{
+		Path,
+		PathBuf,
+	},
 };
 
-use snap::write::FrameEncoder;
+use snap::{
+	read::FrameDecoder,
+	write::FrameEncoder,
+};
 
 use crate::{
 	encryption::Cipher,
@@ -19,6 +25,7 @@ use crate::{
 		Header,
 		HeaderKind,
 	},
+	Error,
 	Result,
 };
 
@@ -59,6 +66,21 @@ pub fn send_file<W: Write, C: Cipher>(mut con: W, path: &Path, cipher: &C) -> Re
 	Ok(())
 }
 
-pub fn read_header<R: Read>(mut con: R) -> Result<Header> {
-	bincode::deserialize_from(&mut con).map_err(|e| e.into())
+pub fn save_file(name: &str, compressed: bool, data: &[u8]) -> Result<PathBuf> {
+	let path = PathBuf::from(name);
+	if path.exists() {
+		return Err(Error(
+			"can't save the received file; file already exists".into(),
+		));
+	}
+	if !compressed {
+		return std::fs::write(&path, data)
+			.map(|_| path)
+			.map_err(|e| e.into());
+	}
+	let cursor = Cursor::new(data);
+	let mut unarchiver = FrameDecoder::new(cursor);
+	let mut f = File::create(&path)?;
+	io::copy(&mut unarchiver, &mut f)?;
+	Ok(path)
 }

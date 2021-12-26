@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Error(String);
+pub struct Error(pub String);
 
 impl fmt::Display for Error {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
