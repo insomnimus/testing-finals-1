@@ -43,15 +43,20 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 	while let Ok(ev) = rx.recv() {
 		match ev {
 			Event::Msg(mut bytes) => {
+				#[cfg(not(blackbox_tests))]
 				println!("peer(encrypted): {}", String::from_utf8_lossy(&bytes));
 				key.decrypt_in_place(&mut bytes);
+				#[cfg(not(blackbox_tests))]
 				println!("peer(plaintext): {}", String::from_utf8_lossy(&bytes));
+				#[cfg(blackbox_tests)]
+				println!("msg: {}", String::from_utf8_lossy(&bytes));
 			}
 			Event::File {
 				name,
 				compressed,
 				mut data,
 			} => {
+				#[cfg(not(blackbox_tests))]
 				println!("decrypting the file...");
 				key.decrypt_in_place(&mut data);
 				match save_file(&name, compressed, &data) {
@@ -59,7 +64,16 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 						eprintln!("error saving the file: {}", e);
 						eprintln!("this could mean the key was incorrect");
 					}
-					Ok(path) => println!("saved the file to {}", path.display()),
+					Ok(path) => {
+						if cfg!(blackbox_tests) {
+							println!(
+								"file: {}",
+								path.file_name().unwrap_or_default().to_string_lossy()
+							);
+						} else {
+							println!("saved the file to {}", path.display());
+						}
+					}
 				};
 			}
 			Event::Command(Command::Msg(msg)) => {
@@ -69,13 +83,22 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 			}
 			Event::Command(Command::File(path)) => {
 				if !path.is_file() {
-					println!("{}: file doesn't exist or is a directory", path.display());
-					continue;
+					if cfg!(blackbox_tests) {
+						panic!("{}: file doesn't exist", path.display());
+					} else {
+						eprintln!("{}: file doesn't exist or is a directory", path.display());
+						continue;
+					}
 				}
+				#[cfg(not(blackbox_tests))]
 				println!("compressing and sending the file...");
-				if send_file(&mut con, &path, &key).is_err() {
+				if let Err(e) = send_file(&mut con, &path, &key) {
+					if cfg!(blackbox_tests) {
+						panic!("error while sending the file: {}", e);
+					}
 					break;
 				}
+				#[cfg(not(blackbox_tests))]
 				println!("sent {}", path.display());
 			}
 		}

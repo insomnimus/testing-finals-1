@@ -25,9 +25,12 @@ pub use error::{
 	Result,
 };
 
+// static _TEST_MODE: AtomicBool = AtomicBool::new(false);
+
 fn build_app() -> App<'static> {
 	App::new("simple-chat")
 		.about("Yazılım Sınama final projesi.")
+		// .arg(Arg::new("test-mode").hidden(true).long("__test_mode"))
 		.arg(arg!(-k --key <PASSWORD> "Mesajlaşmada kullanılacak şifre."))
 		.subcommand(
 			App::new("listen")
@@ -79,6 +82,8 @@ fn run_listen<A: ToSocketAddrs + std::fmt::Debug, K: Cipher>(addr: A, key: K) ->
 
 fn main() {
 	let m = build_app().get_matches();
+	// _TEST_MODE.store(m.is_present("test-mode"), Ordering::Relaxed);
+
 	let key = m.value_of("key").map(KeyedXor::new).unwrap();
 	match m.subcommand().unwrap() {
 		("listen", m) => {
