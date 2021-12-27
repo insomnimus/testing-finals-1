@@ -41,6 +41,9 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 
 	while let Ok(ev) = rx.recv() {
 		match ev {
+			Event::Command(Command::Exit) => {
+				return;
+			}
 			Event::Msg(mut bytes) => {
 				#[cfg(not(blackbox_tests))]
 				println!("peer(encrypted): {}", String::from_utf8_lossy(&bytes));

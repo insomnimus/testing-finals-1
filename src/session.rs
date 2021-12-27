@@ -16,6 +16,7 @@ pub enum Event {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Command {
+	Exit,
 	Msg(String),
 	File(PathBuf),
 }
@@ -25,7 +26,9 @@ impl FromStr for Command {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let s = s.trim();
-		if let Some(rest) = s.strip_prefix("msg") {
+		if s == "exit" {
+			Ok(Self::Exit)
+		} else if let Some(rest) = s.strip_prefix("msg") {
 			let data = rest.trim();
 			if data.is_empty() {
 				Err("you can't send an empty message")
