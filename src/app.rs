@@ -103,12 +103,14 @@ pub fn start<K: Cipher>(mut con: TcpStream, key: K) {
 		}
 	}
 
+	#[cfg(not(blackbox_tests))]
 	println!("peer terminated the connection... exiting");
 }
 
 fn start_stdin(tx: Sender<Event>) {
 	thread::spawn(move || {
 		let stdin = io::stdin();
+		#[cfg(not(blackbox_tests))]
 		println!("commands:\nmsg: send a chat message\nfile: send a file");
 		stdin
 			.lock()
@@ -135,6 +137,7 @@ fn start_reading(mut con: TcpStream, tx: Sender<Event>) {
 				},
 				Ok(Header { kind, len }) => {
 					// read len amount of bytes from the connection.
+					#[cfg(not(blackbox_tests))]
 					if let HeaderKind::File { name, .. } = &kind {
 						println!("peer sent a file ({})... downloading", &name);
 					}
@@ -151,13 +154,15 @@ fn start_reading(mut con: TcpStream, tx: Sender<Event>) {
 						}),
 					}
 					.unwrap_or_else(|_| {
-						eprintln!("peer terminated the connection... exiting");
+						#[cfg(not(blackbox_tests))]
+						println!("peer terminated the connection... exiting");
 						std::process::exit(0);
 					});
 				}
 			}
 		}
-		eprintln!("peer terminated the connection... exiting");
+		#[cfg(not(blackbox_tests))]
+		println!("peer terminated the connection... exiting");
 		std::process::exit(0);
 	});
 }

@@ -64,17 +64,21 @@ fn build_app() -> App<'static> {
 }
 
 fn run_connect<A: ToSocketAddrs, K: Cipher>(addr: A, key: K) -> Result<()> {
+	#[cfg(not(blackbox_tests))]
 	println!("connecting to the remote");
 	let stream = TcpStream::connect(addr)?;
+	#[cfg(not(blackbox_tests))]
 	println!("connected");
 	app::start(stream, key);
 	Ok(())
 }
 
 fn run_listen<A: ToSocketAddrs + std::fmt::Debug, K: Cipher>(addr: A, key: K) -> Result<()> {
+	#[cfg(not(blackbox_tests))]
 	println!("listening on {:?}", &addr);
 	let listener = TcpListener::bind(addr)?;
 	let con = listener.incoming().next().unwrap()?;
+	#[cfg(not(blackbox_tests))]
 	println!("remote connected");
 	app::start(con, key);
 	Ok(())
