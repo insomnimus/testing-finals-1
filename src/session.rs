@@ -64,6 +64,8 @@ mod tests {
 		}
 
 		let oks = &[
+			("exit", Command::Exit),
+			("  exit", Command::Exit),
 			("msg hello", cmd!(msg "hello")),
 			("file main.rs", cmd!(file "main.rs")),
 			("  msg    what's up?   ", cmd!(msg "what's up?")),
